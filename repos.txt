@@ -1,1 +1,2 @@
+coderbyheart/aws-ci
 coderbyheart/photos-scaler
