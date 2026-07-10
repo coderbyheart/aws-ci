@@ -1,0 +1,60 @@
+name: Deploy
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - saga
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: 1
+  FORCE_COLOR: 3
+  JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: 1
+  NODE_NO_WARNINGS: 1
+  # For reading the repo details
+  # We need to use a PAT here instead of the built-in authentication,
+  # because right now the GITHUB_TOKEN does not have the necessary permissions
+  # See https://github.com/orgs/community/discussions/46566
+  GITHUB_TOKEN: ${{ secrets.PAT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+
+      # This will only work, if you've run `npx cdk deploy` once manually.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # The role is set up via https://github.com/bifravst/ci
+          role-to-assume: |
+            arn:aws:iam::${{ secrets.CI__AWS_ACCOUNT_ID }}:role/${{ github.repository_owner }}-ci-${{ github.event.repository.name }}
+          aws-region: ${{ vars.CI__AWS_REGION }}
+
+      - name: Clone bifravst/ci
+        run: |
+          git clone https://github.com/bifravst/ci
+          cd ci
+          npm ci
+
+      - run: npx cdk deploy --require-approval never
+        working-directory: ci
+        env:
+          STACK_NAME: aws-ci
+          REPOS_LIST: ../repos.txt
