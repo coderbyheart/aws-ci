@@ -14,5 +14,5 @@ file.
 git clone https://github.com/bifravst/ci
 cd ci
 npm ci
-STACK_NAME=aws-ci REPOS_LIST=../repos.txt npx cdk deploy
+STACK_NAME=coderbyheart-ci REPOS_LIST=../repos.txt npx cdk deploy
 ```
