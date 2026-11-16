@@ -36,7 +36,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24.x"
+          node-version: ">=26.12.1 <27"
 
       # This will only work, if you've run `npx cdk deploy` once manually.
       - name: Configure AWS credentials
@@ -51,7 +51,11 @@ jobs:
         run: |
           git clone https://github.com/bifravst/ci
           cd ci
-          npm ci
+          # Install the NPM version required by bifravst/ci (engines.npm)
+          npmVersion="$(node -p 'require("./package.json").engines.npm')"
+          echo "Installing npm@${npmVersion}"
+          npm install -g "npm@${npmVersion}"
+          npm ci --no-audit
 
       - run: npx cdk deploy --require-approval never
         working-directory: ci
